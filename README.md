@@ -47,8 +47,45 @@ ptd=(double*) malloc(30*sizeof(double));
 
 ## realloc()，调整已分配好的内存区域。
 ## free(),释放已分配好的内存区域。
+# 下面用两个数相加的例子来说明。
+``` c
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+#include "iostream"
+ __global__ void addKernel(int *c, const int a, const int b)
+{
+	 *c = a + b;//将a+b的值保存在c的地址中。
+}
 
+int main()
+{
+	int c;
+	int *dev_c;
+	cudaMalloc((void **)&dev_c, sizeof(int));//在设备内分配一块内存，供int型的dev_c来使用。
+	addKernel << <1, 3 >> > (dev_c,2, 4);//在主机上调用设备函数，将得到的值存在设备上。
+	cudaMemcpy(&c, dev_c, sizeof(int), cudaMemcpyDeviceToHost);
+    printf(" 2 + 4 = %d\n", c);
+	cudaFree(dev_c);
+	std::cin.get();
 
+    return 0;
+}
+```
+头文件不用介绍了。关键在于多了两个概念。
+# 可以像调用c函数那样将参数传递给核函数。
+# 当设备执行任何有用的操作时，都需要分配内存，例如将计算值返回给主机。
+了解这些基本概念之后，可以关注函数cudaMalloc()
+# 该函数的第一个参数是一个指针，指向于保存新分配地址内存的变量，第二个参数是分配内存的大小，返回类型为void*,但分配内存的指针不作为返回值。
+# 事实上，设备指针有很多限制，
+## 可以将cudaMalloc()分配的指针传递给设备上执行的函数
+## 可以在设备代码上使用cudaMalloc()分配的指针进行内存读写操作
+## 可以将cudaMalloc()分配的指针传递给主机上执行的函数
+## 不能在主机代码使用中使用cudaMAlloc()分配的指针进行内存读写操作。
+# 在主机中想访问设备上的内存，用到了函数cudaMemcpy();
+## 该函数的最后一个参数设定了源指针是设备上的还是主机上的。
+
+进阶，自行编写向量加法的cuda代码：
+``` c
 
 
 
